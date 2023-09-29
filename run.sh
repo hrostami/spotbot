@@ -13,6 +13,8 @@ else
     cd ..
 fi
 
+sudo apt install python3-venv
+
 clear
 
 if [ ! -d "spotbot" ] || [ ! -d "spotbot/bin" ]; then
