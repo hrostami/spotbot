@@ -4,15 +4,6 @@ from spotdl import Spotdl, Song
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, CallbackQueryHandler
 
-spotdl_client_id = ''
-spotdl_client_secret = ''
-telegram_bot_token = ''
-
-spotdl_instance = Spotdl(
-    client_id=spotdl_client_id,
-    client_secret=spotdl_client_secret
-)
-
 # File to store the allowed_ids and admin_id
 pickle_file = 'spotbot_config.pkl'
 
@@ -22,14 +13,31 @@ if os.path.exists(pickle_file):
         data = pickle.load(f)
         allowed_ids = data.get('allowed_ids', [])
         admin_id = data.get('admin_id', None)
+        spotdl_client_id = data.get('spotdl_client_id', '5f573c9620494bae87890c0f08a60293')
+        spotdl_client_secret = data.get('spotdl_client_secret', '212476d9b0f3472eaa762d90b19b0ba8')
+        telegram_bot_token = data.get('telegram_bot_token', None)
+
 else:
     allowed_ids = []
     admin_id = None
+    spotdl_client_id = '5f573c9620494bae87890c0f08a60293'
+    spotdl_client_secret = '212476d9b0f3472eaa762d90b19b0ba8'
+    telegram_bot_token =  None
 
 def save_allowed_ids():
-    data = {'allowed_ids': allowed_ids, 'admin_id': admin_id}
+    data = {'allowed_ids': allowed_ids,
+            'admin_id': admin_id,
+            'spotdl_client_id': spotdl_client_id,
+            'spotdl_client_secret': spotdl_client_secret,
+            'telegram_bot_token': telegram_bot_token,
+            }
     with open(pickle_file, 'wb') as f:
         pickle.dump(data, f)
+
+spotdl_instance = Spotdl(
+    client_id=spotdl_client_id,
+    client_secret=spotdl_client_secret
+)
 
 def download_spotify_link(link: str) -> list:
     songs = spotdl_instance.search([link])
@@ -141,7 +149,16 @@ def delete_user(update: Update, context: CallbackContext):
         update.message.reply_text("You are not authorized to perform this action.")
 
 def main():
-    global allowed_ids, admin_id
+    global allowed_ids, admin_id, spotdl_client_id, spotdl_client_secret, telegram_bot_token
+
+    if admin_id is None:
+        admin_id = int(input("Enter the admin's Telegram user ID: "))
+        telegram_bot_token = input("\nEnter Telegram Bot Token from @Botfather: ")
+        spotify_cred = input("\nDo you want to use your own spotify credentials (y/n): ")
+        if spotify_cred == 'y':
+            spotdl_client_id = input("\n Enter your Spotify client ID: ")
+            spotdl_client_secret = input("\n Enter your Spotify client secret: ")
+        save_allowed_ids()
 
     updater = Updater(token=telegram_bot_token, use_context=True)
     dispatcher = updater.dispatcher
@@ -151,10 +168,6 @@ def main():
     dispatcher.add_handler(CommandHandler("deleteuser", delete_user, pass_args=True))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_messages))
     dispatcher.add_handler(CallbackQueryHandler(button_click))
-
-    if admin_id is None:
-        admin_id = int(input("Enter the admin's Telegram user ID: "))
-        save_allowed_ids()
 
     print("Bot is running...")
     updater.start_polling()
