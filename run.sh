@@ -36,10 +36,18 @@ if ! command -v ffmpeg &> /dev/null; then
     sudo apt-get install -y ffmpeg
 fi
 
+clear
+
 tmux has-session -t spotbot 2>/dev/null
 if [ $? != 0 ]; then
     tmux new-session -d -s spotbot "python3 spotbot.py"
+    echo
+    echo "SpotBot started"
+    echo
 else
     tmux kill-session -t spotbot
     tmux new-session -d -s spotbot "python3 spotbot.py"
+    echo
+    echo "SpotBot restarted"
+    echo
 fi
