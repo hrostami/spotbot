@@ -13,7 +13,7 @@ else
     cd ..
 fi
 
-if [ ! -d "spotbot" ]; then
+if [ ! -d "spotbot" ] || [ ! -d "spotbot/bin" ]; then
     python3 -m venv spotbot
 fi
 
