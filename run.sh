@@ -15,21 +15,21 @@ fi
 
 if [ ! -d "spotbot" ]; then
     git clone https://github.com/hrostami/spotbot.git
+    cd spotbot
 else
     cd spotbot
     git pull origin master
-    cd ..
 fi
 
 sudo apt install python3-venv
 
 clear
 
-if [ ! -d "spotbot" ] || [ ! -d "spotbot/bin" ]; then
+if [ ! -d "bin" ]; then
     python3 -m venv spotbot
 fi
 
-source spotbot/bin/activate
+source bin/activate
 pip install --upgrade python-telegram-bot==13.5 spotdl
 
 if ! command -v ffmpeg &> /dev/null; then
