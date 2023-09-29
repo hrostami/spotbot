@@ -1,4 +1,7 @@
 #!/bin/bash
+echo
+echo "Going to run SpotBot in the background using tmux..."
+echo
 
 if [ ! -f "spotbot/spotbot_config.pkl" ]; then
     echo
