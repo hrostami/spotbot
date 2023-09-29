@@ -1,5 +1,13 @@
 #!/bin/bash
 
+if [ ! -f "spotbot/spotbot_config.pkl" ]; then
+    echo
+    echo "spotbot_config.pkl not found. Please manually run spotbot.py and fill in the required information!"
+    echo "Then hit Ctrl+C to stop it and then run this script again."
+    echo
+    exit 0
+fi
+
 if ! command -v tmux &> /dev/null; then
     sudo apt-get update
     sudo apt-get install -y tmux
