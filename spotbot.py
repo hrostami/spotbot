@@ -1,0 +1,164 @@
+import os
+import pickle
+from spotdl import Spotdl, Song
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, CallbackQueryHandler
+
+spotdl_client_id = ''
+spotdl_client_secret = ''
+telegram_bot_token = ''
+
+spotdl_instance = Spotdl(
+    client_id=spotdl_client_id,
+    client_secret=spotdl_client_secret
+)
+
+# File to store the allowed_ids and admin_id
+pickle_file = 'spotbot_config.pkl'
+
+# Initialize allowed_ids and admin_id from pickle if available, else start fresh
+if os.path.exists(pickle_file):
+    with open(pickle_file, 'rb') as f:
+        data = pickle.load(f)
+        allowed_ids = data.get('allowed_ids', [])
+        admin_id = data.get('admin_id', None)
+else:
+    allowed_ids = []
+    admin_id = None
+
+def save_allowed_ids():
+    data = {'allowed_ids': allowed_ids, 'admin_id': admin_id}
+    with open(pickle_file, 'wb') as f:
+        pickle.dump(data, f)
+
+def download_spotify_link(link: str) -> list:
+    songs = spotdl_instance.search([link])
+    if songs:
+        return songs
+    else:
+        return []
+
+# Function to handle new users
+def handle_new_user(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    user_name = update.message.from_user.username
+
+    # Send a message to the admin to approve the user
+    admin_message = f"New user: @{user_name} (ID: {user_id}). Do you want to allow this user?"
+    keyboard = [
+        [InlineKeyboardButton("Yes", callback_data=f'approve_{user_id}'),
+         InlineKeyboardButton("No", callback_data=f'deny_{user_id}')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    context.bot.send_message(chat_id=admin_id, text=admin_message, reply_markup=reply_markup)
+
+    update.message.reply_text("Your request is pending approval from the admin. Please wait.")
+
+def download_song(song):
+    if len(song.artists) > 1:
+        artist = ''
+        for singer in song.artists:
+            artist += f"{singer}, "
+        artist = artist[:-2]
+    else:
+        artist = song.artist
+    name = song.name
+    file_path = artist + ' - ' + name
+    os.system(f'spotdl {song.url}')
+    return file_path
+
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text("Hello! Send a Spotify link and I'll download the corresponding audio.")
+
+def button_click(update: Update, context: CallbackContext):
+    query = update.callback_query
+    query.answer()
+
+    user_id = int(query.data.split('_')[1])
+
+    if query.data.startswith('approve'):
+        allowed_ids.append(user_id)
+        save_allowed_ids()
+
+        context.bot.send_message(chat_id=user_id, text='Your request has been approved. You can now use the bot.')
+
+        query.edit_message_text(text=f'User {user_id} approved!')
+
+    elif query.data.startswith('deny'):
+        context.bot.send_message(chat_id=user_id, text='Your request to use this bot has been denied.')
+        query.edit_message_text(text=f'User {user_id} denied access.')
+
+def handle_messages(update: Update, context: CallbackContext):
+    text = update.message.text
+    user_id = update.message.from_user.id
+
+    if user_id not in allowed_ids and user_id != admin_id:
+        handle_new_user(update, context)
+        return
+
+    if text.startswith('https://open.spotify.com/'):
+
+        songs = download_spotify_link(text)
+        if songs:
+            for song in songs:
+                file_path = download_song(song)
+                if len(songs) == 1:
+                    context.bot.send_photo(user_id, song.cover_url, caption=file_path)
+                with open(f'{file_path}.mp3', 'rb') as audio_file:
+                    context.bot.send_audio(chat_id=user_id, audio=audio_file)
+                os.remove(f'{file_path}.mp3')
+        else:
+            update.message.reply_text("Unable to download the Spotify link.")
+    else:
+        update.message.reply_text("Wrong link! This bot is only for downloading songs from Spotify!")
+
+def list_allowed_users(update: Update, context: CallbackContext):
+    if update.message.from_user.id == admin_id:
+        allowed_users_info = ""
+        for user_id in allowed_ids:
+            user = context.bot.get_chat(user_id)
+            allowed_users_info += f"User ID: {user_id}, Username: @{user.username}\n" if user.username else f"User ID: {user_id}\n\n"
+
+        if allowed_users_info:
+            update.message.reply_text("List of allowed users:\n" + allowed_users_info)
+        else:
+            update.message.reply_text("No users are currently allowed.")
+    else:
+        update.message.reply_text("You are not authorized to perform this action.")
+
+def delete_user(update: Update, context: CallbackContext):
+    if update.message.from_user.id == admin_id:
+        user_id = int(context.args[0])
+        if user_id in allowed_ids:
+            user = context.bot.get_chat(user_id)
+            allowed_ids.remove(user_id)
+            save_allowed_ids()
+            update.message.reply_text(f"User ID {user_id}, Username: @{user.username}, has been removed from the allowed list." if user.username else f"User ID {user_id} has been removed from the allowed list.")
+        else:
+            update.message.reply_text(f"User ID {user_id} is not in the allowed list.")
+    else:
+        update.message.reply_text("You are not authorized to perform this action.")
+
+def main():
+    global allowed_ids, admin_id
+
+    updater = Updater(token=telegram_bot_token, use_context=True)
+    dispatcher = updater.dispatcher
+
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("listusers", list_allowed_users))
+    dispatcher.add_handler(CommandHandler("deleteuser", delete_user, pass_args=True))
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_messages))
+    dispatcher.add_handler(CallbackQueryHandler(button_click))
+
+    if admin_id is None:
+        admin_id = int(input("Enter the admin's Telegram user ID: "))
+        save_allowed_ids()
+
+    print("Bot is running...")
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    main()
