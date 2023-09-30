@@ -21,7 +21,7 @@ if [ ! -d "spotbot" ]; then
     cd spotbot
 else
     cd spotbot
-    git pull origin master
+    git pull origin
 fi
 
 sudo apt install python3-venv
