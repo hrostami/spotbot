@@ -61,7 +61,7 @@ def handle_new_user(update: Update, context: CallbackContext):
     
     context.bot.send_message(chat_id=admin_id, text=admin_message, reply_markup=reply_markup)
 
-    update.message.reply_text("Your request is pending approval from the admin. Please wait.")
+    update.message.reply_text("Your request to use this bot has been sent to the admin. Please wait.")
 
 def download_song(song):
     if len(song.artists) > 1:
@@ -111,13 +111,17 @@ def handle_messages(update: Update, context: CallbackContext):
         if songs:
             for song in songs:
                 file_path = download_song(song)
-                if len(songs) == 1:
-                    context.bot.send_photo(user_id, song.cover_url, caption=file_path)
-                with open(f'{file_path}.mp3', 'rb') as audio_file:
-                    context.bot.send_audio(chat_id=user_id, audio=audio_file)
-                os.remove(f'{file_path}.mp3')
+                
+                try:
+                    with open(f'{file_path}.mp3', 'rb') as audio_file:
+                        if len(songs) == 1:
+                            context.bot.send_photo(user_id, song.cover_url, caption=file_path)
+                        context.bot.send_audio(chat_id=user_id, audio=audio_file)
+                    os.remove(f'{file_path}.mp3')
+                except:
+                    update.message.reply_text("Unable to download this song")
         else:
-            update.message.reply_text("Unable to download the Spotify link.")
+            update.message.reply_text("Unable to download songs from the Spotify link you sent.")
     else:
         update.message.reply_text("Wrong link! This bot is only for downloading songs from Spotify!")
 
