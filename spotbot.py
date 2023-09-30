@@ -76,6 +76,10 @@ def download_song(song):
     os.system(f'spotdl {song.url}')
     return file_path
 
+def find_mp3_by_artist(artist):
+    mp3_files = [file for file in os.listdir() if file.endswith('.mp3') and file.startswith(artist)]
+    return mp3_files
+
 def start(update: Update, context: CallbackContext):
     update.message.reply_text("Hello! Send a Spotify link and I'll download the corresponding audio.")
 
@@ -111,15 +115,18 @@ def handle_messages(update: Update, context: CallbackContext):
         if songs:
             for song in songs:
                 file_path = download_song(song)
-                
-                try:
-                    with open(f'{file_path}.mp3', 'rb') as audio_file:
+                mp3_file_path = f'{file_path}.mp3'
+                if os.path.exists(mp3_file_path):
+                    with open(mp3_file_path, 'rb') as audio_file:
                         if len(songs) == 1:
                             context.bot.send_photo(user_id, song.cover_url, caption=file_path)
                         context.bot.send_audio(chat_id=user_id, audio=audio_file)
-                    os.remove(f'{file_path}.mp3')
-                except:
-                    update.message.reply_text("Unable to download this song")
+                    os.remove(mp3_file_path)
+                else:
+                    prob_song = find_mp3_by_artist(song.artist)
+                    if prob_song:
+                        print(prob_song)
+                        context.bot.send_audio(chat_id=user_id, audio=open(prob_song[0], 'rb'))
         else:
             update.message.reply_text("Unable to download songs from the Spotify link you sent.")
     else:
