@@ -126,7 +126,9 @@ def handle_messages(update: Update, context: CallbackContext):
                     prob_song = find_mp3_by_artist(song.artist)
                     if prob_song:
                         print(prob_song)
+                        context.bot.send_photo(user_id, song.cover_url, caption=file_path)
                         context.bot.send_audio(chat_id=user_id, audio=open(prob_song[0], 'rb'))
+                        os.remove(prob_song)
         else:
             update.message.reply_text("Unable to download songs from the Spotify link you sent.")
     else:
