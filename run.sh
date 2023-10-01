@@ -59,7 +59,7 @@ cat <<EOL > $SERVICE_FILE
 Description=Spotbot Python Script
 
 [Service]
-ExecStart=$(pwd)/spotbot/bin/python $(pwd)/spotbot/spotbot.py
+ExecStart=$(pwd)/spotbot/bin/python3 $(pwd)/spotbot/spotbot.py
 Restart=always
 RestartSec=3
 User=$USERNAME
