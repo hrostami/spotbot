@@ -64,6 +64,7 @@ Restart=always
 RestartSec=3
 User=$USERNAME
 Group=$GROUP
+WorkingDirectory=$(pwd)/spotbot
 
 [Install]
 WantedBy=multi-user.target
