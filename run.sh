@@ -41,16 +41,36 @@ fi
 
 clear
 
-tmux has-session -t spotbot 2>/dev/null
-if [ $? != 0 ]; then
-    tmux new-session -d -s spotbot "python3 spotbot.py"
-    echo
-    echo "SpotBot started"
-    echo
-else
-    tmux kill-session -t spotbot
-    tmux new-session -d -s spotbot "python3 spotbot.py"
-    echo
-    echo "SpotBot restarted"
-    echo
+# Check if the script is run with superuser privileges
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run as root"
+    exit
 fi
+
+cd
+
+USERNAME=$(logname)
+
+GROUP=$(id -gn $USERNAME)
+
+SERVICE_FILE="/etc/systemd/system/spotbot.service"
+cat <<EOL > $SERVICE_FILE
+[Unit]
+Description=Spotbot Python Script
+
+[Service]
+ExecStart=$(pwd)/spotbot/bin/python $(pwd)/spotbot/spotbot.py
+Restart=always
+RestartSec=3
+User=$USERNAME
+Group=$GROUP
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+systemctl daemon-reload
+systemctl enable spotbot
+systemctl start spotbot
+
+echo "Service created as spotbot. You can now start and manage it using 'systemctl'."
