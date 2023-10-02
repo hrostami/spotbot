@@ -82,13 +82,13 @@ def start(update: Update, context: CallbackContext):
     update.message.reply_text("Hello!\n Send a Spotify link \nor\n search 'Artist - Song name' ")
 
 def button_click(update: Update, context: CallbackContext):
-    link = search_query
     query = update.callback_query
     query.answer()
 
-    user_id = int(query.data.split('_')[1])
+    user_id = int(query.data.split('_')[-1])
 
-    if query.data == 'search_result_yes':
+    if query.data.startswith('search_result_yes'):
+        link = query.data.split('_')[-2]
         query.edit_message_text(text=f'Downloading the song...')
         future = executor.submit(run_spotdl_operations, link)
         songs = future.result()
@@ -103,7 +103,7 @@ def button_click(update: Update, context: CallbackContext):
                             context.bot.send_photo(user_id, song.cover_url, caption=name)
                         context.bot.send_audio(chat_id=user_id, audio=audio_file)
                     os.remove(mp3_file_path)
-    elif query.data == 'search_result_no':
+    elif query.data.startswith('search_result_no'):
         query.edit_message_text(text=f'Download cancelled.')
 
     elif query.data.startswith('approve'):
@@ -118,12 +118,13 @@ def button_click(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=user_id, text='Your request to use this bot has been denied.')
         query.edit_message_text(text=f'User {user_id} denied access.')
 
-def search_and_confirm(update: Update, context: CallbackContext, artist, name):
+def search_and_confirm(update: Update, context: CallbackContext, artist, name, link):
+    user_id = update.message.from_user.id
     search_result = f"{artist} - {name}"
     
     keyboard = [
-        [InlineKeyboardButton("Yes", callback_data=f'search_result_yes'),
-         InlineKeyboardButton("No", callback_data=f'search_result_no')]
+        [InlineKeyboardButton("Yes", callback_data=f'search_result_yes_{link}_{user_id}'),
+         InlineKeyboardButton("No", callback_data=f'search_result_no_{user_id}')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -131,8 +132,6 @@ def search_and_confirm(update: Update, context: CallbackContext, artist, name):
 
 
 def handle_messages(update: Update, context: CallbackContext):
-    global search_query
-    search_query = update.message.text
     text = update.message.text
     user_id = update.message.from_user.id
 
@@ -160,7 +159,7 @@ def handle_messages(update: Update, context: CallbackContext):
     elif '-' in text:
         future = executor.submit(run_spotdl_operations, text, 'search')
         song = future.result()[0]
-        search_and_confirm(update, context, song.artist, song.name)
+        search_and_confirm(update, context, song.artist, song.name, text)
     else:
         update.message.reply_text("Wrong link! This bot is only for downloading songs from Spotify!")
 
