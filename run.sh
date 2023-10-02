@@ -18,14 +18,14 @@ readp(){ read -p "$(yellow "$1")" $2;}
 # Get/update spotbot
 if [ ! -d "spotbot" ]; then
     git clone https://github.com/hrostami/spotbot.git
-    cd spotbot
 else
     cd spotbot
     git pull origin
+    cd
 fi
 
 set_bot_credentials() {
-    if [ -f "/root/spotbot/spotbot_config.pkl" ]; then
+    if [ -f "spotbot/spotbot_config.pkl" ]; then
         readp "Config already exists, do you want to replace it? (y/n): " choice
         if [[ $choice =~ ^[Yy] ]]; then
             :
@@ -80,15 +80,16 @@ get_spotbot_add_service() {
         set_bot_credentials
     fi
 
-    sudo apt install python3-venv
+    sudo apt install python3-venv -y
 
     clear
+    cd spotbot
 
-    if [ ! -d "bin" ]; then
-        python3 -m venv spotbot
+    if [ ! -d "spotbot-venv" ]; then
+        python3 -m venv spotbot-venv
     fi
 
-    source bin/activate
+    source spotbot-venv/bin/activate
     pip install --upgrade python-telegram-bot==13.5 spotdl
 
     if ! command -v ffmpeg &> /dev/null; then
@@ -122,7 +123,7 @@ get_spotbot_add_service() {
 Description=Spotbot Python Script
 
 [Service]
-ExecStart=$(pwd)/spotbot/bin/python3 $(pwd)/spotbot/spotbot.py
+ExecStart=$(pwd)/spotbot/spotbot-venv/bin/python3 $(pwd)/spotbot/spotbot.py
 Restart=always
 RestartSec=3
 User=$USERNAME
@@ -167,14 +168,14 @@ print_menu() {
     echo
     green "5. Stop SpotBot"
     echo
-    red "6. Exit"
+    red "0. Exit"
     yellow "-----------------------------------------"
 }
 
 while true; do
     clear
     print_menu
-    readp "Enter your choice (1-4): " choice
+    readp "Enter your choice (1-5): " choice
 
     case "$choice" in
         1)
@@ -207,7 +208,7 @@ while true; do
             yellow "Done!"
             readp "Press Enter to continue..."
             ;;
-        6)
+        0)
             echo "Exiting."
             exit 0
             ;;
