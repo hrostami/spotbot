@@ -113,6 +113,10 @@ def handle_messages(update: Update, context: CallbackContext):
 
         songs = download_spotify_link(text)
         if songs:
+            results = spotdl_instance.download_songs(songs)
+            song, path = spotdl_instance.download(songs[0])
+            print(f"\npath is :{path}\n")
+            print(f'song is:\n{song}\n')
             for song in songs:
                 file_path = download_song(song)
                 mp3_file_path = f'{file_path}.mp3'
