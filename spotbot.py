@@ -61,6 +61,8 @@ def run_spotdl_operations(link):
     songs = download_spotify_link(spotdl,link)
     if songs:
         song, path = download_songs(spotdl, songs[0])
+    else:
+        song, path = ('','')
     return song, path
 # async def spotdl_async(link):
 #     task1 = asyncio.create_task(download_spotify_link(link))
