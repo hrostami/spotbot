@@ -123,10 +123,9 @@ def handle_messages(update: Update, context: CallbackContext):
     if text.startswith('https://open.spotify.com/') or text.startswith('https://spotify.link/'):
 
         songs = download_spotify_link(text)
-        if songs:
-            
+        if songs: 
+            threading.Thread(target=download_songs_async, args=(songs,)).start()
             for song in songs:
-                threading.Thread(target=download_songs_async, args=(song,)).start()
                 file_path = download_song(song)
                 mp3_file_path = f'{file_path}.mp3'
                 if os.path.exists(mp3_file_path):
