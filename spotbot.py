@@ -52,23 +52,16 @@ def download_spotify_link(spotdl, link: str) -> list:
 
 def download_songs(spotdl, query):
     result_list = spotdl.download_songs(query)
-    for song in result_list:
-        print(f"\npath is :{song[1]}\n")
-        print(f'song is:\n{song[0]}\n')
     return result_list
 
 def run_spotdl_operations(link):
     spotdl = start_spotdl()
-    songs = download_spotify_link(spotdl,link)
+    songs = spotdl.search([link])
     if songs:
-        results = download_songs(spotdl, songs)
+        results = spotdl.download_songs(songs)
+        return results
     else:
-        results = []
-    return results
-# async def spotdl_async(link):
-#     task1 = asyncio.create_task(download_spotify_link(link))
-#     songs = await task1.result()
-#     task2 = asyncio.create_task(download_songs_async(songs))
+        return []
 
 # Function to handle new users
 def handle_new_user(update: Update, context: CallbackContext):
