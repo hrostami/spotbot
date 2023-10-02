@@ -51,7 +51,7 @@ def download_spotify_link(link: str) -> list:
 def download_songs_async(songs):
     # loop = asyncio.new_event_loop()
     # asyncio.set_event_loop(loop)
-    song, path = spotdl_instance.download(songs[0])
+    song, path = spotdl_instance.download(songs)
     print(f"\npath is :{path}\n")
     print(f'song is:\n{song}\n')
     return song, path
