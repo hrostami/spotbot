@@ -1,5 +1,6 @@
 import os
 import threading
+import asyncio
 import concurrent.futures
 import pickle
 from spotdl import Spotdl, Song
@@ -8,6 +9,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 
 # File to store the allowed_ids and admin_id
 pickle_file = 'spotbot_config.pkl'
+
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 # Initialize allowed_ids and admin_id from pickle if available, else start fresh
 if os.path.exists(pickle_file):
@@ -120,9 +123,8 @@ def handle_messages(update: Update, context: CallbackContext):
 
     if text.startswith('https://open.spotify.com/') or text.startswith('https://spotify.link/'):
         update.message.reply_text("Processing the link you sent.")
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(run_spotdl_operations, text)
-            songs = future.result()
+        future = executor.submit(run_spotdl_operations, text)
+        songs = future.result()
         if songs: 
             for item in songs:
                 song = item[0]
