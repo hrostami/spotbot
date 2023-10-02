@@ -1,4 +1,6 @@
 import os
+import threading
+import concurrent.futures
 import pickle
 from spotdl import Spotdl, Song
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -34,18 +36,22 @@ def save_allowed_ids():
     with open(pickle_file, 'wb') as f:
         pickle.dump(data, f)
 
-spotdl_instance = Spotdl(
-    client_id=spotdl_client_id,
-    client_secret=spotdl_client_secret
-)
+def start_spotdl():
+    spotdl_instance = Spotdl(
+        client_id=spotdl_client_id,
+        client_secret=spotdl_client_secret
+    )
+    return spotdl_instance
 
-def download_spotify_link(link: str) -> list:
-    songs = spotdl_instance.search([link])
+def run_spotdl_operations(link):
+    spotdl = start_spotdl()
+    songs = spotdl.search([link])
     if songs:
-        return songs
+        results = spotdl.download_songs(songs)
+        return results
     else:
         return []
-    
+
 # Function to handle new users
 def handle_new_user(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
@@ -110,24 +116,20 @@ def handle_messages(update: Update, context: CallbackContext):
         return
 
     if text.startswith('https://open.spotify.com/') or text.startswith('https://spotify.link/'):
-
-        songs = download_spotify_link(text)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_spotdl_operations, text)
+            songs = future.result()
         if songs: 
-            for song in songs:
-                file_path = download_song(song)
-                mp3_file_path = f'{file_path}.mp3'
+            for item in songs:
+                song = item[0]
+                name = song.artist + ' - ' + song.name
+                mp3_file_path = item[1]
                 if os.path.exists(mp3_file_path):
                     with open(mp3_file_path, 'rb') as audio_file:
                         if len(songs) == 1:
-                            context.bot.send_photo(user_id, song.cover_url, caption=file_path)
+                            context.bot.send_photo(user_id, song.cover_url, caption=name)
                         context.bot.send_audio(chat_id=user_id, audio=audio_file)
                     os.remove(mp3_file_path)
-                else:
-                    prob_song = find_mp3_by_artist(song.artist)
-                    if prob_song:
-                        context.bot.send_photo(user_id, song.cover_url, caption=file_path)
-                        context.bot.send_audio(chat_id=user_id, audio=open(prob_song[0], 'rb'))
-                        os.remove(prob_song)
         else:
             update.message.reply_text("Unable to download songs from the Spotify link you sent.")
     else:
