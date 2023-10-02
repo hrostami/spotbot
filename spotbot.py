@@ -116,6 +116,7 @@ def handle_messages(update: Update, context: CallbackContext):
         return
 
     if text.startswith('https://open.spotify.com/') or text.startswith('https://spotify.link/'):
+        update.message.reply_text("Processing the link you sent.")
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(run_spotdl_operations, text)
             songs = future.result()
