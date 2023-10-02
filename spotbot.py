@@ -51,19 +51,20 @@ def download_spotify_link(spotdl, link: str) -> list:
         return []
 
 def download_songs(spotdl, query):
-    song, path = spotdl.download(query)
-    print(f"\npath is :{path}\n")
-    print(f'song is:\n{song}\n')
-    return song, path
+    result_list = spotdl.download_songs(query)
+    for song in result_list:
+        print(f"\npath is :{song[1]}\n")
+        print(f'song is:\n{song[0]}\n')
+    return result_list
 
 def run_spotdl_operations(link):
     spotdl = start_spotdl()
     songs = download_spotify_link(spotdl,link)
     if songs:
-        song, path = download_songs(spotdl, songs[0])
+        results = download_songs(spotdl, songs)
     else:
-        song, path = ('','')
-    return song, path
+        results = []
+    return results
 # async def spotdl_async(link):
 #     task1 = asyncio.create_task(download_spotify_link(link))
 #     songs = await task1.result()
@@ -135,11 +136,9 @@ def handle_messages(update: Update, context: CallbackContext):
     if text.startswith('https://open.spotify.com/') or text.startswith('https://spotify.link/'):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(run_spotdl_operations, text)
-            song, path = future.result()
-        songs = download_spotify_link(text)
+            songs = future.result()
         if songs: 
             for song in songs:
-                threading.Thread(target=download_songs_async, args=(song,)).start()
                 file_path = download_song(song)
                 mp3_file_path = f'{file_path}.mp3'
                 if os.path.exists(mp3_file_path):
