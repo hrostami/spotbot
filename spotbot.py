@@ -48,8 +48,8 @@ def download_spotify_link(link: str) -> list:
     else:
         return []
 
-def download_songs_async(songs):
-    song, path = spotdl_instance.download(songs)
+def download_songs_async(query):
+    song, path = spotdl_instance.download(query)
     print(f"\npath is :{path}\n")
     print(f'song is:\n{song}\n')
     return song, path
@@ -122,7 +122,7 @@ def handle_messages(update: Update, context: CallbackContext):
         songs = download_spotify_link(text)
         if songs: 
             for song in songs:
-                download_songs_async()
+                download_songs_async(song)
                 file_path = download_song(song)
                 mp3_file_path = f'{file_path}.mp3'
                 if os.path.exists(mp3_file_path):
