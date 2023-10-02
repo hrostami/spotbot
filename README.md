@@ -16,3 +16,8 @@ To run SpotBot, execute the following command in your terminal:
 
 ```bash
 bash <(curl -sL https://bit.ly/run-spotbot)
+```
+or
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/hrostami/spotbot/main/run.sh)
+```
