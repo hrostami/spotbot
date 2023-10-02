@@ -49,9 +49,8 @@ def download_spotify_link(link: str) -> list:
         return []
 
 def download_songs_async(songs):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    results = spotdl_instance.download_songs(songs)
+    # loop = asyncio.new_event_loop()
+    # asyncio.set_event_loop(loop)
     song, path = spotdl_instance.download(songs[0])
     print(f"\npath is :{path}\n")
     print(f'song is:\n{song}\n')
@@ -124,8 +123,8 @@ def handle_messages(update: Update, context: CallbackContext):
 
         songs = download_spotify_link(text)
         if songs: 
-            threading.Thread(target=download_songs_async, args=(songs,)).start()
             for song in songs:
+                threading.Thread(target=download_songs_async, args=(song,)).start()
                 file_path = download_song(song)
                 mp3_file_path = f'{file_path}.mp3'
                 if os.path.exists(mp3_file_path):
