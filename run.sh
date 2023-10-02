@@ -1,4 +1,5 @@
 #!/bin/bash
+
 red='\033[0;31m'
 bblue='\033[0;34m'
 yellow='\033[0;33m'
@@ -14,6 +15,59 @@ rred(){ echo -e "\033[35m\033[01m$1\033[0m";}
 readtp(){ read -t5 -n26 -p "$(yellow "$1")" $2;}
 readp(){ read -p "$(yellow "$1")" $2;}
 
+# Get/update spotbot
+if [ ! -d "spotbot" ]; then
+    git clone https://github.com/hrostami/spotbot.git
+    cd spotbot
+else
+    cd spotbot
+    git pull origin
+fi
+
+set_bot_credentials() {
+    if [ -f "/root/spotbot/spotbot_config.pkl" ]; then
+        readp "Config already exists, do you want to replace it? (y/n): " choice
+        if [[ $choice =~ ^[Yy] ]]; then
+            :
+        else
+            return
+        fi
+    fi
+    
+    yellow "--------------Getting credntials--------------"
+    python3 <<EOF
+import os
+import pickle
+
+# File to store the allowed_ids and admin_id
+pickle_file = '/root/spotbot/spotbot_config.pkl'
+
+def save_allowed_ids():
+    data = {'allowed_ids': allowed_ids,
+            'admin_id': admin_id,
+            'spotdl_client_id': spotdl_client_id,
+            'spotdl_client_secret': spotdl_client_secret,
+            'telegram_bot_token': telegram_bot_token,
+            }
+    with open(pickle_file, 'wb') as f:
+        pickle.dump(data, f)
+
+# Initialize allowed_ids and admin_id from pickle if available, else start fresh
+allowed_ids = []
+admin_id = int(input("Enter the admin's Telegram user ID: "))
+telegram_bot_token = input("\nEnter Telegram Bot Token from @Botfather: ")
+spotify_cred = input("\nDo you want to use your own spotify credentials (y/n): ")
+if spotify_cred == 'y':
+    spotdl_client_id = input("\n Enter your Spotify client ID: ")
+    spotdl_client_secret = input("\n Enter your Spotify client secret: ")
+elif spotify_cred == 'n':
+    spotdl_client_id = '5f573c9620494bae87890c0f08a60293'
+    spotdl_client_secret = '212476d9b0f3472eaa762d90b19b0ba8'
+save_allowed_ids()
+EOF
+    yellow "----------------------------------------------"
+    readp "Press Enter to continue..."
+}
 get_spotbot_add_service() {
     echo
     yellow "Going to update and run SpotBot in the background..."
@@ -21,23 +75,9 @@ get_spotbot_add_service() {
 
     if [ ! -f "spotbot/spotbot_config.pkl" ]; then
         echo
-        rred "spotbot_config.pkl not found. Please manually run spotbot.py and fill in the required information!"
-        rred "Then hit Ctrl+C to stop it and then run this script again."
+        rred "spotbot_config.pkl not found. Please set credentials..."
         echo
-        exit 0
-    fi
-
-    if ! command -v tmux &> /dev/null; then
-        sudo apt-get update
-        sudo apt-get install -y tmux
-    fi
-
-    if [ ! -d "spotbot" ]; then
-        git clone https://github.com/hrostami/spotbot.git
-        cd spotbot
-    else
-        cd spotbot
-        git pull origin
+        set_bot_credentials
     fi
 
     sudo apt install python3-venv
@@ -64,13 +104,20 @@ get_spotbot_add_service() {
     fi
 
     cd
+    SERVICE_NAME="spotbot"
 
-    USERNAME=$(logname)
+    if systemctl list-units --type=service | grep -q "\<$SERVICE_NAME\>"; then
+        yellow "Service '$SERVICE_NAME' exists."
+        systemctl restart spotbot
 
-    GROUP=$(id -gn $USERNAME)
+    else
+        rred "Service '$SERVICE_NAME' does not exist."
+        USERNAME=$(logname)
 
-    SERVICE_FILE="/etc/systemd/system/spotbot.service"
-    cat <<EOL > $SERVICE_FILE
+        GROUP=$(id -gn $USERNAME)
+
+        SERVICE_FILE="/etc/systemd/system/spotbot.service"
+        cat <<EOL > $SERVICE_FILE
 [Unit]
 Description=Spotbot Python Script
 
@@ -86,9 +133,11 @@ WorkingDirectory=$(pwd)/spotbot
 WantedBy=multi-user.target
 EOL
 
-    systemctl daemon-reload
-    systemctl enable spotbot
-    systemctl start spotbot
+        systemctl daemon-reload
+        systemctl enable spotbot
+        systemctl start spotbot
+
+    fi
 
     yellow "Service created as spotbot. You can now start and manage it using 'systemctl'."
 
@@ -96,41 +145,69 @@ EOL
 
 
 print_menu() {
-    yellow "Menu:"
-    green "1) Install and create service"
-    green "2) Restart service"
-    green "3) Show log in real time"
-    red "4) Exit"
+    bblue "   _____                __   ____          __ ";
+    bblue "  / ___/ ____   ____   / /_ / __ ) ____   / /_";
+    bblue "  \__ \ / __ \ / __ \ / __// __  |/ __ \ / __/";
+    bblue " ___/ // /_/ // /_/ // /_ / /_/ // /_/ // /_  ";
+    bblue "/____// .___/ \____/ \__//_____/ \____/ \__/  ";
+    bblue "     /_/                                      ";
+    white "               Created by Hosy                "
+    white "----------------------------------------------"
+    white "      Github: https://github.com/hrostami"
+    white "      Twitter: https://twitter.com/hosy000"
+    echo
+    yellow "-------------------Menu------------------"
+    green "1. Set Credntials"
+    echo
+    green "2. Start SpotBot and create service"
+    echo
+    green "3. Restart SpotBot"
+    echo
+    green "4. Show log in real time"
+    echo
+    green "5. Stop SpotBot"
+    echo
+    red "6. Exit"
+    yellow "-----------------------------------------"
 }
 
-echo
-bblue "Welcome to SpotBot Management Script"
-echo
-
 while true; do
+    clear
     print_menu
-    read -p "Enter your choice (1-4): " choice
+    readp "Enter your choice (1-4): " choice
 
-    case $choice in
+    case "$choice" in
         1)
+            yellow "Going to create required credntials for you"
+            set_bot_credentials
+            readp "Press Enter to continue..."
+            ;;
+        2)
             echo
             echo "Installing and creating service..."
             get_spotbot_add_service
             readp "Press Enter to continue..."
             ;;
-        2)
+        3)
             echo
             yellow "Restarting service..."
             systemctl restart spotbot
             readp "Press Enter to continue..."
             ;;
-        3)
+        4)
             echo
             yellow "Showing log in real time. Press Ctrl+C to exit."
             sudo journalctl -u spotbot -f
             readp "Press Enter to continue..."
             ;;
-        4)
+        5)
+            echo
+            yellow "Stoping service..."
+            systemctl stop spotbot
+            yellow "Done!"
+            readp "Press Enter to continue..."
+            ;;
+        6)
             echo "Exiting."
             exit 0
             ;;
