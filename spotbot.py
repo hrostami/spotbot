@@ -49,7 +49,6 @@ def download_spotify_link(link: str) -> list:
         return []
 
 def download_songs_async(songs):
-    asyncio.set_event_loop(spotdl_loop)
     song, path = spotdl_instance.download(songs)
     print(f"\npath is :{path}\n")
     print(f'song is:\n{song}\n')
@@ -123,7 +122,7 @@ def handle_messages(update: Update, context: CallbackContext):
         songs = download_spotify_link(text)
         if songs: 
             for song in songs:
-                spotdl_loop.run_until_complete(download_songs_async)
+                download_songs_async()
                 file_path = download_song(song)
                 mp3_file_path = f'{file_path}.mp3'
                 if os.path.exists(mp3_file_path):
@@ -171,8 +170,7 @@ def delete_user(update: Update, context: CallbackContext):
         update.message.reply_text("You are not authorized to perform this action.")
 
 def main():
-    global allowed_ids, admin_id, spotdl_client_id, spotdl_client_secret, telegram_bot_token, spotdl_loop
-    spotdl_loop = asyncio.new_event_loop()
+    global allowed_ids, admin_id, spotdl_client_id, spotdl_client_secret, telegram_bot_token
 
     if admin_id is None:
         admin_id = int(input("Enter the admin's Telegram user ID: "))
