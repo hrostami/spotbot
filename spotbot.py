@@ -109,7 +109,7 @@ def handle_messages(update: Update, context: CallbackContext):
         handle_new_user(update, context)
         return
 
-    if text.startswith('https://open.spotify.com/'):
+    if text.startswith('https://open.spotify.com/') or text.startswith('https://spotify.link/'):
 
         songs = download_spotify_link(text)
         if songs:
@@ -125,7 +125,6 @@ def handle_messages(update: Update, context: CallbackContext):
                 else:
                     prob_song = find_mp3_by_artist(song.artist)
                     if prob_song:
-                        print(prob_song)
                         context.bot.send_photo(user_id, song.cover_url, caption=file_path)
                         context.bot.send_audio(chat_id=user_id, audio=open(prob_song[0], 'rb'))
                         os.remove(prob_song)
