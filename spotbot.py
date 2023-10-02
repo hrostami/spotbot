@@ -54,6 +54,11 @@ def download_songs_async(query):
     print(f'song is:\n{song}\n')
     return song, path
 
+# async def spotdl_async(link):
+#     task1 = asyncio.create_task(download_spotify_link(link))
+#     songs = await task1.result()
+#     task2 = asyncio.create_task(download_songs_async(songs))
+
 # Function to handle new users
 def handle_new_user(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
@@ -122,7 +127,7 @@ def handle_messages(update: Update, context: CallbackContext):
         songs = download_spotify_link(text)
         if songs: 
             for song in songs:
-                download_songs_async(song)
+                threading.Thread(target=download_songs_async, args=(song,)).start()
                 file_path = download_song(song)
                 mp3_file_path = f'{file_path}.mp3'
                 if os.path.exists(mp3_file_path):
