@@ -197,8 +197,10 @@ while true; do
             ;;
         4)
             echo
-            yellow "Showing log in real time. Press Ctrl+C to exit."
+            rred "Showing log in real time. Press Ctrl+C to exit."
+            echo
             sudo journalctl -u spotbot -f
+            echo
             readp "Press Enter to continue..."
             ;;
         5)

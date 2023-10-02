@@ -79,7 +79,7 @@ def handle_new_user(update: Update, context: CallbackContext):
     update.message.reply_text("Your request to use this bot has been sent to the admin. Please wait.")
 
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Hello!\n Send a Spotify link \nor\n search 'Artist - Song name' ")
+    update.message.reply_text("Hello!\nSend a Spotify link \nor\nsearch 'Artist - Song' ")
 
 def button_click(update: Update, context: CallbackContext):
     query = update.callback_query
