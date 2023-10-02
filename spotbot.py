@@ -138,21 +138,16 @@ def handle_messages(update: Update, context: CallbackContext):
             future = executor.submit(run_spotdl_operations, text)
             songs = future.result()
         if songs: 
-            for song in songs:
-                file_path = download_song(song)
-                mp3_file_path = f'{file_path}.mp3'
+            for item in songs:
+                song = item[0]
+                name = song.artist + song.name
+                mp3_file_path = item[1]
                 if os.path.exists(mp3_file_path):
                     with open(mp3_file_path, 'rb') as audio_file:
                         if len(songs) == 1:
-                            context.bot.send_photo(user_id, song.cover_url, caption=file_path)
+                            context.bot.send_photo(user_id, song.cover_url, caption=name)
                         context.bot.send_audio(chat_id=user_id, audio=audio_file)
                     os.remove(mp3_file_path)
-                else:
-                    prob_song = find_mp3_by_artist(song.artist)
-                    if prob_song:
-                        context.bot.send_photo(user_id, song.cover_url, caption=file_path)
-                        context.bot.send_audio(chat_id=user_id, audio=open(prob_song[0], 'rb'))
-                        os.remove(prob_song)
         else:
             update.message.reply_text("Unable to download songs from the Spotify link you sent.")
     else:
