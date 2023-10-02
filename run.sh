@@ -15,6 +15,7 @@ rred(){ echo -e "\033[35m\033[01m$1\033[0m";}
 readtp(){ read -t5 -n26 -p "$(yellow "$1")" $2;}
 readp(){ read -p "$(yellow "$1")" $2;}
 
+cd
 # Get/update spotbot
 if [ ! -d "spotbot" ]; then
     git clone https://github.com/hrostami/spotbot.git
@@ -181,18 +182,18 @@ while true; do
         1)
             yellow "Going to create required credntials for you"
             set_bot_credentials
-            readp "Press Enter to continue..."
             ;;
         2)
             echo
-            echo "Installing and creating service..."
+            rred "Installing and creating service..."
             get_spotbot_add_service
             readp "Press Enter to continue..."
             ;;
         3)
             echo
-            yellow "Restarting service..."
+            rred "Restarting service..."
             systemctl restart spotbot
+            echo
             readp "Press Enter to continue..."
             ;;
         4)
@@ -205,9 +206,11 @@ while true; do
             ;;
         5)
             echo
-            yellow "Stoping service..."
+            rred "Stoping service..."
             systemctl stop spotbot
-            yellow "Done!"
+            echo
+            rred "Done!"
+            echo
             readp "Press Enter to continue..."
             ;;
         0)
