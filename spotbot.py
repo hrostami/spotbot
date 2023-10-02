@@ -1,5 +1,4 @@
 import os
-import asyncio
 import threading
 import concurrent.futures
 import pickle
@@ -36,23 +35,13 @@ def save_allowed_ids():
             }
     with open(pickle_file, 'wb') as f:
         pickle.dump(data, f)
+
 def start_spotdl():
     spotdl_instance = Spotdl(
         client_id=spotdl_client_id,
         client_secret=spotdl_client_secret
     )
     return spotdl_instance
-
-def download_spotify_link(spotdl, link: str) -> list:
-    songs = spotdl.search([link])
-    if songs:
-        return songs
-    else:
-        return []
-
-def download_songs(spotdl, query):
-    result_list = spotdl.download_songs(query)
-    return result_list
 
 def run_spotdl_operations(link):
     spotdl = start_spotdl()
@@ -133,7 +122,7 @@ def handle_messages(update: Update, context: CallbackContext):
         if songs: 
             for item in songs:
                 song = item[0]
-                name = song.artist + song.name
+                name = song.artist + ' - ' + song.name
                 mp3_file_path = item[1]
                 if os.path.exists(mp3_file_path):
                     with open(mp3_file_path, 'rb') as audio_file:
