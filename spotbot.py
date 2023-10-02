@@ -192,14 +192,10 @@ def delete_user(update: Update, context: CallbackContext):
 
 def send_message_to_users(update: Update, context: CallbackContext):
     message = update.message.text[9:]
-    if update.message.from_user.id == admin_id:
+    if update.message.from_user.id == admin_id and allowed_ids:
         for user_id in allowed_ids:
-            user = context.bot.get_chat(user_id)
-
-        if allowed_ids:
-            update.message.reply_text(f'Message sent:\n{message}')
-        else:
-            update.message.reply_text("No users are currently allowed.")
+            context.bot.send_message(user_id, message)
+        update.message.reply_text(f'Message sent:\n{message}')
     else:
         update.message.reply_text("You are not authorized to perform this action.")
 
