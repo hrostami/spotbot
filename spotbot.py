@@ -1,6 +1,7 @@
 import os
 import asyncio
 import threading
+import concurrent.futures
 import pickle
 from spotdl import Spotdl, Song
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -35,25 +36,31 @@ def save_allowed_ids():
             }
     with open(pickle_file, 'wb') as f:
         pickle.dump(data, f)
+def start_spotdl():
+    spotdl_instance = Spotdl(
+        client_id=spotdl_client_id,
+        client_secret=spotdl_client_secret
+    )
+    return spotdl_instance
 
-spotdl_instance = Spotdl(
-    client_id=spotdl_client_id,
-    client_secret=spotdl_client_secret
-)
-
-def download_spotify_link(link: str) -> list:
-    songs = spotdl_instance.search([link])
+def download_spotify_link(spotdl, link: str) -> list:
+    songs = spotdl.search([link])
     if songs:
         return songs
     else:
         return []
 
-def download_songs_async(query):
-    song, path = spotdl_instance.download(query)
+def download_songs(spotdl, query):
+    song, path = spotdl.download(query)
     print(f"\npath is :{path}\n")
     print(f'song is:\n{song}\n')
     return song, path
 
+def run_spotdl_operations(link):
+    spotdl = start_spotdl()
+    songs = download_spotify_link(spotdl,link)
+    song, path = download_songs(spotdl, songs)
+    return song, path
 # async def spotdl_async(link):
 #     task1 = asyncio.create_task(download_spotify_link(link))
 #     songs = await task1.result()
@@ -123,7 +130,9 @@ def handle_messages(update: Update, context: CallbackContext):
         return
 
     if text.startswith('https://open.spotify.com/') or text.startswith('https://spotify.link/'):
-
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_spotdl_operations, text)
+            song, path = future.result()
         songs = download_spotify_link(text)
         if songs: 
             for song in songs:
