@@ -42,9 +42,12 @@ def start_spotdl():
         client_secret=spotdl_client_secret
     )
     return spotdl_instance
-spotdl = start_spotdl()
+spotdl = None
 
 def run_spotdl_operations(link):
+    global spotdl
+    if not spotdl:
+        spotdl = start_spotdl()
     songs = spotdl.search([link])
     if songs:
         results = spotdl.download_songs(songs)
