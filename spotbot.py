@@ -221,7 +221,7 @@ def main():
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("listusers", list_allowed_users))
     dispatcher.add_handler(CommandHandler("deleteuser", delete_user, pass_args=True))
-    dispatcher.add_handler(CommandHandler("send_message", send_message_to_users, pass_args=True))
+    dispatcher.add_handler(CommandHandler("message", send_message_to_users, pass_args=True))
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_messages))
     dispatcher.add_handler(CallbackQueryHandler(button_click))
 
