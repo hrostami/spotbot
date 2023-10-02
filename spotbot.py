@@ -82,7 +82,7 @@ def start(update: Update, context: CallbackContext):
     update.message.reply_text("Hello!\n Send a Spotify link \nor\n search 'Artist - Song name' ")
 
 def button_click(update: Update, context: CallbackContext):
-    link = update.message.text
+    link = search_query
     query = update.callback_query
     query.answer()
 
@@ -131,6 +131,8 @@ def search_and_confirm(update: Update, context: CallbackContext, artist, name):
 
 
 def handle_messages(update: Update, context: CallbackContext):
+    global search_query
+    search_query = update.message.text
     text = update.message.text
     user_id = update.message.from_user.id
 
