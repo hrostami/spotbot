@@ -190,6 +190,20 @@ def delete_user(update: Update, context: CallbackContext):
     else:
         update.message.reply_text("You are not authorized to perform this action.")
 
+def send_message_to_users(update: Update, context: CallbackContext):
+    message = update.message.text[9:]
+    if update.message.from_user.id == admin_id:
+        for user_id in allowed_ids:
+            user = context.bot.get_chat(user_id)
+            allowed_users_info += f"User ID: {user_id}, Username: @{user.username}\n" if user.username else f"User ID: {user_id}\n\n"
+
+        if allowed_users_info:
+            update.message.reply_text(f'Message sent:\n{message}')
+        else:
+            update.message.reply_text("No users are currently allowed.")
+    else:
+        update.message.reply_text("You are not authorized to perform this action.")
+
 def main():
     global allowed_ids, admin_id, spotdl_client_id, spotdl_client_secret, telegram_bot_token
 
