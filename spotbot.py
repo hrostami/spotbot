@@ -42,9 +42,7 @@ def start_spotdl():
         client_secret=spotdl_client_secret
     )
     return spotdl_instance
-with concurrent.futures.ThreadPoolExecutor() as executor:
-    future = executor.submit(start_spotdl)
-    spotdl = future.result()
+spotdl = start_spotdl()
 
 def run_spotdl_operations(link):
     songs = spotdl.search([link])
