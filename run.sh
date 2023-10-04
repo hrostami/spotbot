@@ -1,5 +1,4 @@
 #!/bin/bash
-
 red='\033[0;31m'
 bblue='\033[0;34m'
 yellow='\033[0;33m'
