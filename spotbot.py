@@ -140,22 +140,25 @@ def handle_messages(update: Update, context: CallbackContext):
         return
 
     if text.startswith('https://open.spotify.com/') or text.startswith('https://spotify.link/'):
-        update.message.reply_text("Processing the link you sent.")
-        future = executor.submit(run_spotdl_operations, text)
-        songs = future.result()
-        if songs: 
-            for item in songs:
-                song = item[0]
-                name = song.artist + ' - ' + song.name
-                mp3_file_path = item[1]
-                if os.path.exists(mp3_file_path):
-                    with open(mp3_file_path, 'rb') as audio_file:
-                        if len(songs) == 1:
-                            context.bot.send_photo(user_id, song.cover_url, caption=name)
-                        context.bot.send_audio(chat_id=user_id, audio=audio_file)
-                    os.remove(mp3_file_path)
-        else:
-            update.message.reply_text("Unable to download songs from the Spotify link you sent.")
+        try:
+            update.message.reply_text("Processing the link you sent.")
+            future = executor.submit(run_spotdl_operations, text)
+            songs = future.result()
+            if songs: 
+                for item in songs:
+                    song = item[0]
+                    name = song.artist + ' - ' + song.name
+                    mp3_file_path = item[1]
+                    if os.path.exists(mp3_file_path):
+                        with open(mp3_file_path, 'rb') as audio_file:
+                            if len(songs) == 1:
+                                context.bot.send_photo(user_id, song.cover_url, caption=name)
+                            context.bot.send_audio(chat_id=user_id, audio=audio_file)
+                        os.remove(mp3_file_path)
+            else:
+                update.message.reply_text("Unable to download songs from the Spotify link you sent.")
+        except:
+            update.message.reply_text("This song is not downloadable, sorry!")
     elif '-' in text:
         future = executor.submit(run_spotdl_operations, text, 'search')
         song = future.result()[0]
